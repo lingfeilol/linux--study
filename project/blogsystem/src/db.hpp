@@ -4,6 +4,7 @@
 #include<string>
 #include<mysql/mysql.h>
 #include<jsoncpp/json/json.h>
+#include<mutex>
 using namespace std;
 
 /*
@@ -27,6 +28,7 @@ using namespace std;
 
 namespace blog_system 
 {
+    std::mutex _mutex; //确保查询操作 和 保存查询结果集之间 的死锁问题，让其为原子操作
     //静态函数
     static MYSQL* MysqlInit()  //初始化操作句柄，且连接到数据库
     {
@@ -123,6 +125,8 @@ namespace blog_system
         bool GetAll(Json::Value* tags) //输出型参数，保存查询结果
         {
 #define SELECT_TAG_ALL "select * from table_tag;"
+          //加锁
+          std::lock_guard<std::mutex> lkmutex(_mutex);
           //直接执行，不用组织了
             int ret=MysqlQuery(_mysql,SELECT_TAG_ALL);
             if(ret == false)
@@ -153,6 +157,7 @@ namespace blog_system
 #define SELECT_TAG_ONE "select name from table_tag where id=%d;"
             char tmp[4096];
             sprintf(tmp,SELECT_TAG_ONE,tag_id);
+            std::lock_guard<std::mutex> lkmutex(_mutex);
             int ret=MysqlQuery(_mysql,tmp);
             if(ret == false)
             {
@@ -221,6 +226,7 @@ namespace blog_system
         bool GetAll(Json::Value * users)
         {
 #define SELECT_USER_ALL "select * from table_user;"
+            std::lock_guard<std::mutex> lkmutex(_mutex);
             int ret =MysqlQuery(_mysql,SELECT_USER_ALL);
             if(ret == false)
                 return false;
@@ -248,6 +254,7 @@ namespace blog_system
 #define SELECT_USER_ONE "select name from table_user where id=%d;"
             char tmp[4096];
             sprintf(tmp,SELECT_USER_ONE,user_id);
+            std::lock_guard<std::mutex> lkmutex(_mutex);
             int ret = MysqlQuery(_mysql,tmp);
             if(ret == false)
                 return false;
@@ -315,6 +322,7 @@ namespace blog_system
         bool GetAll(Json::Value* blogs)
         {
 #define SELECT_BLOG_ALL "select * from table_blog;"
+            std::lock_guard<std::mutex> lkmutex(_mutex);
             int ret = MysqlQuery(_mysql,SELECT_BLOG_ALL);
             if(ret == false)
                 return false;
@@ -347,6 +355,7 @@ namespace blog_system
 #define SELECT_TAG_BLOG_ALL "select * from table_blog where tag_id=%d;"
             char tmp[4096];
             sprintf(tmp,SELECT_TAG_BLOG_ALL,tag_id);
+            std::lock_guard<std::mutex> lkmutex(_mutex);
             int ret = MysqlQuery(_mysql,tmp);
             if(ret == false)
                 return false;
@@ -379,6 +388,7 @@ namespace blog_system
 #define SELECT_USER_BLOG_ALL "select * from table_blog where user_id=%d;"
             char tmp[4096];
             sprintf(tmp,SELECT_USER_BLOG_ALL,user_id);
+            std::lock_guard<std::mutex> lkmutex(_mutex);
             int ret =MysqlQuery(_mysql,tmp);
             if(ret ==false) 
                 return false;
@@ -412,6 +422,7 @@ namespace blog_system
 #define SELECT_BLOG_ONE "select * from table_blog where id=%d;"
             char tmp[4096];
             sprintf(tmp,SELECT_BLOG_ONE,blog_id);
+            std::lock_guard<std::mutex> lkmutex(_mutex);
             int ret = MysqlQuery(_mysql,tmp);
             if(ret == false)
                 return false;
